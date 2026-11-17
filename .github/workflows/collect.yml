@@ -1,0 +1,41 @@
+name: 축제 정보 모으기
+
+on:
+  schedule:
+    # 한국 시간 00:00 · 09:00 · 12:00 · 17:00 (GitHub 예약은 UTC 기준: 15 · 00 · 03 · 08시)
+    # GitHub 사정으로 몇 분~수십 분 늦게 시작될 수 있어요.
+    - cron: '0 0,3,8,15 * * *'
+  workflow_dispatch: # 손으로 바로 돌리기
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 한국관광공사 TourAPI에서 모으기
+        env:
+          TOURAPI_KEY: ${{ secrets.TOURAPI_KEY }} # 키는 저장소 비밀값에만 둔다(파일·로그에 남기지 않음)
+          FESTIVALS_OUT: festivals.json
+        run: node scripts/fetch-festivals.mjs
+
+      - name: 바뀐 내용 저장(→ GitHub Pages 주소로 공개)
+        run: |
+          git config user.name "festival-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add festivals.json data/
+          if git diff --cached --quiet; then echo "바뀐 것 없음"; exit 0; fi
+          git commit -m "축제 정보 갱신 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          git push
