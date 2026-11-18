@@ -1,6 +1,9 @@
 {
   "date": "2026-11-18",
   "counts": {
-    "searchFestival2": 1
+    "searchFestival2": 2,
+    "detailCommon2": 6,
+    "detailIntro2": 6,
+    "detailImage2": 6
   }
 }
